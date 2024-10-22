@@ -1,47 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import './App.css';  // Import the CSS for styling
+import React, { useState, useEffect } from 'react';
+import './App.css';
 
-const App = () => {
-  const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+function App() {
+  const [countries, setCountries] = useState([]); // Store all countries
+  const [filteredCountries, setFilteredCountries] = useState([]); // Store filtered results
+  const [searchTerm, setSearchTerm] = useState(''); // Store search input
 
-  // Fetch countries' data
+  // Fetch country data on initial render
   useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const response = await fetch('https://xcountries-backend.azurewebsites.net/all');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
+    fetch('https://restcountries.com/v3.1/all')
+      .then((response) => response.json())
+      .then((data) => {
         setCountries(data);
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCountries();
+        setFilteredCountries(data); // Initially display all countries
+      })
+      .catch((error) => {
+        console.error('Error fetching countries:', error);
+      });
   }, []);
 
+  // Filter countries based on search term
+  useEffect(() => {
+    const filtered = countries.filter((country) =>
+      country.name.common.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  }, [searchTerm, countries]);
+
   return (
-    <div>
-      <h1>XCountries Flags</h1>
-      {loading && <p>Loading...</p>}
-      {error && <p>Error fetching data: {error}</p>}
-      <div className="country-list">
-        {countries.map((country) => (
-          <div key={country.name} className="country-card">
-            <img src={country.flag} alt={`Flag of ${country.name}`} className="flag-img" />
-            <p>{country.name}</p>
-          </div>
-        ))}
+    <div className="App">
+      <input
+        type="text"
+        placeholder="Search for a country..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      <div className="countryGrid">
+        {filteredCountries.length > 0 ? (
+          filteredCountries.map((country) => (
+            <div className="countryCard" key={country.cca3}>
+              <img
+                src={country.flags.png}
+                alt={`Flag of ${country.name.common}`}
+              />
+              <p>{country.name.common}</p>
+            </div>
+          ))
+        ) : (
+          <p>No countries found</p>
+        )}
       </div>
     </div>
   );
-};
+}
 
 export default App;
